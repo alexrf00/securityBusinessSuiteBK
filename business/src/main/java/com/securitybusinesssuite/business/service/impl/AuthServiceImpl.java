@@ -129,6 +129,10 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Verification token has expired");
         }
 
+        if (user.isEmailVerified()) {
+            throw new BusinessException("Email already verified");
+        }
+
         user.setEmailVerified(true);
         user.setEmailVerificationToken(null);
         user.setEmailVerificationTokenExpiry(null);
@@ -205,4 +209,5 @@ public class AuthServiceImpl implements AuthService {
         log.info("Created new OAuth user: {}", email);
         return savedUser;
     }
+
 }

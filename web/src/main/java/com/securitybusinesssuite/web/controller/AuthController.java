@@ -63,13 +63,12 @@ public class AuthController {
     public void verifyEmail(
             @RequestParam String token,
             HttpServletResponse response) throws IOException {
-
         try {
             String status = authService.verifyEmail(token);
-            response.sendRedirect(frontendUrl + "/auth/verification?status=" + status);
+            response.sendRedirect(frontendUrl + "/auth/callback?status=" + status);
         } catch (Exception e) {
             log.error("Email verification failed", e);
-            response.sendRedirect(frontendUrl + "/auth/verification?status=error&message=" + e.getMessage());
+            response.sendRedirect(frontendUrl + "/auth/callback?status=error&message=" + e.getMessage());
         }
     }
 
