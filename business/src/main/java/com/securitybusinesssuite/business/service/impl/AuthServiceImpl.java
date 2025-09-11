@@ -139,7 +139,7 @@ public class AuthServiceImpl implements AuthService {
         userRepository.update(user);
 
         log.info("Email verified for user: {}", user.getEmail());
-        return "success";
+        return user.getEmail();
     }
 
     @Override
@@ -162,14 +162,14 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public User processOAuthLogin(String email, String provider, String providerId, Map<String, Object> attributes) {
+    public OAuthResult processOAuthLogin(String email, String provider, String providerId, Map<String, Object> attributes) {
         User.AuthProvider authProvider = User.AuthProvider.valueOf(provider.toUpperCase());
 
         // Check if OAuth user exists
         Optional<User> existingOAuthUser = userRepository.findByProviderAndProviderId(authProvider, providerId);
         if (existingOAuthUser.isPresent()) {
             log.info("OAuth user found, logging in: {}", email);
-            return existingOAuthUser.get();
+            return new OAuthResult(existingOAuthUser.get(), false); // Existing user
         }
 
         // Check if email exists (link accounts)
@@ -192,14 +192,17 @@ public class AuthServiceImpl implements AuthService {
 
             User updatedUser = userRepository.update(user);
             log.info("Linked OAuth to existing account: {}", email);
-            return updatedUser;
+            return new OAuthResult(updatedUser, false); // Existing user (linked)
         }
 
         // Create new OAuth user
+        String firstName = (String) attributes.get("given_name");
+        String lastName = (String) attributes.get("family_name");
+
         User newUser = User.builder()
                 .email(email)
-                .firstName((String) attributes.getOrDefault("given_name", ""))
-                .lastName((String) attributes.getOrDefault("family_name", ""))
+                .firstName(firstName != null ? firstName : "OAuth")
+                .lastName(lastName != null ? lastName : "User")
                 .emailVerified(true)
                 .provider(authProvider)
                 .providerId(providerId)
@@ -207,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(newUser);
         log.info("Created new OAuth user: {}", email);
-        return savedUser;
+        return new OAuthResult(savedUser, true); // New user
     }
 
 }

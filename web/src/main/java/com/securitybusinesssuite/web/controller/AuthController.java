@@ -3,6 +3,7 @@ package com.securitybusinesssuite.web.controller;
 
 import com.securitybusinesssuite.business.dto.*;
 import com.securitybusinesssuite.business.service.AuthService;
+import com.securitybusinesssuite.business.service.JwtService;
 import com.securitybusinesssuite.business.service.UserService;
 import com.securitybusinesssuite.business.util.CookieUtil;
 import com.securitybusinesssuite.web.security.UserPrincipal;
@@ -19,6 +20,8 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
@@ -30,6 +33,7 @@ import java.util.UUID;
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtService jwtService;
     private final UserService userService;
     private final CookieUtil cookieUtil;
 
@@ -64,11 +68,50 @@ public class AuthController {
             @RequestParam String token,
             HttpServletResponse response) throws IOException {
         try {
-            String status = authService.verifyEmail(token);
-            response.sendRedirect(frontendUrl + "/auth/callback?status=" + status);
+            String email = authService.verifyEmail(token);
+            String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
+            response.sendRedirect(frontendUrl + "/auth/callback?status=success&email="+encodedEmail);
         } catch (Exception e) {
             log.error("Email verification failed", e);
             response.sendRedirect(frontendUrl + "/auth/callback?status=error&message=" + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<Map<String, Object>> verifyToken(HttpServletRequest request) {
+        try {
+            String accessToken = cookieUtil.extractTokenFromCookies(request, "access_token");
+
+            if (accessToken == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                        "valid", false,
+                        "message", "No token provided"
+                ));
+            }
+
+            // Validate token and get user info
+            if (jwtService.validateToken(accessToken)) {
+                String email = jwtService.getEmailFromToken(accessToken);
+                UUID userId = jwtService.getUserIdFromToken(accessToken);
+
+                return ResponseEntity.ok(Map.of(
+                        "valid", true,
+                        "email", email,
+                        "userId", userId.toString()
+                ));
+            } else {
+                return ResponseEntity.status(401).body(Map.of(
+                        "valid", false,
+                        "message", "Invalid token"
+                ));
+            }
+
+        } catch (Exception e) {
+            log.error("Token verification failed", e);
+            return ResponseEntity.status(401).body(Map.of(
+                    "valid", false,
+                    "message", "Token verification failed"
+            ));
         }
     }
 

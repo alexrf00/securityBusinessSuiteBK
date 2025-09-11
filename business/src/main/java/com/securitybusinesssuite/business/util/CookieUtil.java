@@ -2,8 +2,11 @@
 package com.securitybusinesssuite.business.util;
 
 import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
 
 @Component
 public class CookieUtil {
@@ -45,5 +48,24 @@ public class CookieUtil {
         cookie.setPath("/");
         cookie.setAttribute("SameSite", "Lax");
         return cookie;
+    }
+
+    public String extractTokenFromCookies(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() != null) {
+            return Arrays.stream(request.getCookies())
+                    .filter(cookie -> cookieName.equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    public String getAccessToken(HttpServletRequest request) {
+        return extractTokenFromCookies(request, "access_token");
+    }
+
+    public String getRefreshToken(HttpServletRequest request) {
+        return extractTokenFromCookies(request, "refresh_token");
     }
 }

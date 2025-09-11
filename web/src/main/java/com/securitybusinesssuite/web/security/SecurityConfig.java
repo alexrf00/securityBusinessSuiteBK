@@ -36,6 +36,7 @@ public class SecurityConfig {
                                 "/auth/login",
                                 "/auth/verify-email",
                                 "/auth/refresh",
+                                "/auth/verify",
                                 "/oauth2/**"
                         ).permitAll()
                         .anyRequest().authenticated()

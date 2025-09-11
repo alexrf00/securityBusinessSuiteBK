@@ -1,0 +1,2017 @@
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\settings.gradle.kts =====
+// path: settings.gradle.kts
+rootProject.name = "securitybusinesssuite"
+include("data", "business", "web")
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\settings.gradle.kts =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\build.gradle.kts =====
+// path: build.gradle.kts
+plugins {
+    java
+    id("org.springframework.boot") version "3.3.5" apply false
+    id("io.spring.dependency-management") version "1.1.6" apply false
+}
+
+allprojects {
+    group = "com.securitybusinesssuite"
+    version = "1.0.0"
+
+    repositories {
+        mavenCentral()
+    }
+}
+
+subprojects {
+    apply(plugin = "java")
+    apply(plugin = "io.spring.dependency-management")
+
+    java {
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
+    }
+
+    tasks.withType<JavaCompile> {
+        options.encoding = "UTF-8"
+    }
+
+    tasks.withType<Test> {
+        useJUnitPlatform()
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\build.gradle.kts =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\build.gradle.kts =====
+// path: business/build.gradle.kts
+plugins {
+    id("org.springframework.boot") apply false
+    id("io.spring.dependency-management")
+}
+
+dependencies {
+    implementation(project(":data"))
+
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+    implementation("org.springframework.boot:spring-boot-starter-mail")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation ("org.springframework.boot:spring-boot-starter-data-jpa")
+    implementation("io.jsonwebtoken:jjwt-api:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
+    runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")
+
+    implementation("org.passay:passay:1.6.5")
+    implementation("jakarta.servlet:jakarta.servlet-api")
+
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.5")
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\build.gradle.kts =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\build.gradle.kts =====
+// path: data/build.gradle.kts
+plugins {
+    id("org.springframework.boot") apply false
+    id("io.spring.dependency-management")
+}
+
+dependencies {
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")
+    implementation("org.postgresql:postgresql")
+    implementation("org.flywaydb:flyway-core")
+    implementation("org.flywaydb:flyway-database-postgresql")
+    implementation("com.zaxxer:HikariCP")
+
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+}
+
+dependencyManagement {
+    imports {
+        mavenBom("org.springframework.boot:spring-boot-dependencies:3.3.5")
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\build.gradle.kts =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\build.gradle.kts =====
+// path: web/build.gradle.kts
+plugins {
+    id("org.springframework.boot")
+    id("io.spring.dependency-management")
+}
+
+dependencies {
+    implementation(project(":data"))
+    implementation(project(":business"))
+
+    implementation("org.springframework.boot:spring-boot-starter-web")
+    implementation("org.springframework.boot:spring-boot-starter-security")
+    implementation("org.springframework.boot:spring-boot-starter-oauth2-client")
+    implementation("org.springframework.boot:spring-boot-starter-validation")
+
+    compileOnly("org.projectlombok:lombok:1.18.34")
+    annotationProcessor("org.projectlombok:lombok:1.18.34")
+
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+
+    testImplementation("org.springframework.boot:spring-boot-starter-test")
+    testImplementation("org.springframework.security:spring-security-test")
+}
+
+springBoot {
+    mainClass.set("com.securitybusinesssuite.web.SecurityBusinessSuiteApplication")
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\build.gradle.kts =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\resources\application.yml =====
+# path: web/src/main/resources/application.yml
+spring:
+  application:
+    name: security-business-suite
+  profiles:
+    active: test
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    hikari:
+      maximum-pool-size: ${DATABASE_POOL_SIZE:10}
+      minimum-idle: 2
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  mail:
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    from: ${MAIL_FROM}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            scope:
+              - email
+              - profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: sub
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+    access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:900}
+    refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:604800}
+
+  frontend:
+    url: ${FRONTEND_URL:http://localhost:3000}
+
+  backend:
+    url: ${BACKEND_URL:http://localhost:8080}
+
+  cookie:
+    secure: ${COOKIE_SECURE:false}
+    domain: ${COOKIE_DOMAIN:localhost}
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    context-path: ${SERVER_CONTEXT_PATH:/}
+
+logging:
+  level:
+    root: INFO
+    com.securitybusinesssuite: DEBUG
+    org.springframework.security: DEBUG
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\resources\application.yml =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\resources\db\migration\V1__create_users_table.sql =====
+-- path: data/src/main/resources/db/migration/V1__create_users_table.sql
+CREATE TYPE auth_provider AS ENUM ('LOCAL', 'GOOGLE');
+
+CREATE TABLE users (
+                       id UUID PRIMARY KEY,
+                       email VARCHAR(255) NOT NULL UNIQUE,
+                       password_hash VARCHAR(255),
+                       first_name VARCHAR(100),
+                       last_name VARCHAR(100),
+                       email_verified BOOLEAN DEFAULT FALSE,
+                       provider auth_provider NOT NULL DEFAULT 'LOCAL',
+                       provider_id VARCHAR(255),
+                       email_verification_token VARCHAR(255),
+                       email_verification_token_expiry TIMESTAMP,
+                       created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                       updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create indexes for performance
+CREATE INDEX idx_users_email ON users(LOWER(email));
+CREATE INDEX idx_users_provider_id ON users(provider, provider_id) WHERE provider_id IS NOT NULL;
+CREATE INDEX idx_users_verification_token ON users(email_verification_token) WHERE email_verification_token IS NOT NULL;
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\resources\db\migration\V1__create_users_table.sql =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\resources\db\migration\V2__add_oauth_indexes.sql =====
+-- path: data/src/main/resources/db/migration/V2__add_oauth_indexes.sql
+-- Additional indexes for OAuth optimization
+CREATE INDEX idx_users_email_verified ON users(email_verified);
+CREATE INDEX idx_users_created_at ON users(created_at DESC);
+
+-- Add constraint for provider_id uniqueness per provider
+ALTER TABLE users ADD CONSTRAINT unique_provider_id
+    UNIQUE NULLS NOT DISTINCT (provider, provider_id);
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\resources\db\migration\V2__add_oauth_indexes.sql =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\gradle\wrapper\gradle-wrapper.properties =====
+distributionBase=GRADLE_USER_HOME
+distributionPath=wrapper/dists
+distributionUrl=https\://services.gradle.org/distributions/gradle-8.14.3-bin.zip
+networkTimeout=10000
+validateDistributionUrl=true
+zipStoreBase=GRADLE_USER_HOME
+zipStorePath=wrapper/dists
+# path: gradle.properties
+org.gradle.jvmargs=-Xmx2048m
+org.gradle.parallel=true
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\gradle\wrapper\gradle-wrapper.properties =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\config\DataSourceConfig.java =====
+// path: data/src/main/java/com/securitybusinesssuite/data/config/DataSourceConfig.java
+package com.securitybusinesssuite.data.config;
+
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import javax.sql.DataSource;
+
+@Configuration
+public class DataSourceConfig {
+
+    @Value("${spring.datasource.url}")
+    private String jdbcUrl;
+
+    @Value("${spring.datasource.username}")
+    private String username;
+
+    @Value("${spring.datasource.password}")
+    private String password;
+
+    @Value("${spring.datasource.hikari.maximum-pool-size:10}")
+    private int maxPoolSize;
+
+    @Bean
+    public DataSource dataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(jdbcUrl);
+        config.setUsername(username);
+        config.setPassword(password);
+        config.setMaximumPoolSize(maxPoolSize);
+        config.setMinimumIdle(2);
+        config.setConnectionTimeout(30000);
+        config.setIdleTimeout(600000);
+        config.setMaxLifetime(1800000);
+
+        return new HikariDataSource(config);
+    }
+
+    @Bean
+    public JdbcTemplate jdbcTemplate(DataSource dataSource) {
+        return new JdbcTemplate(dataSource);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\config\DataSourceConfig.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\entity\User.java =====
+// path: data/src/main/java/com/securitybusinesssuite/data/entity/User.java
+package com.securitybusinesssuite.data.entity;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class User {
+    private UUID id;
+    private String email;
+    private String passwordHash;
+    private String firstName;
+    private String lastName;
+    private boolean emailVerified;
+    private AuthProvider provider;
+    private String providerId;
+    private String emailVerificationToken;
+    private LocalDateTime emailVerificationTokenExpiry;
+    private LocalDateTime createdAt;
+    private LocalDateTime updatedAt;
+
+    public enum AuthProvider {
+        LOCAL, GOOGLE
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\entity\User.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\repository\UserRepository.java =====
+// path: data/src/main/java/com/securitybusinesssuite/data/repository/UserRepository.java
+package com.securitybusinesssuite.data.repository;
+
+import com.securitybusinesssuite.data.entity.User;
+import java.util.Optional;
+import java.util.UUID;
+
+public interface UserRepository {
+    User save(User user);
+    User update(User user);
+    Optional<User> findById(UUID id);
+    Optional<User> findByEmail(String email);
+    Optional<User> findByEmailVerificationToken(String token);
+    Optional<User> findByProviderAndProviderId(User.AuthProvider provider, String providerId);
+    boolean existsByEmail(String email);
+    void deleteById(UUID id);
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\repository\UserRepository.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\repository\impl\UserRepositoryImpl.java =====
+// path: data/src/main/java/com/securitybusinesssuite/data/repository/impl/UserRepositoryImpl.java
+package com.securitybusinesssuite.data.repository.impl;
+
+import com.securitybusinesssuite.data.entity.User;
+import com.securitybusinesssuite.data.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.stereotype.Repository;
+
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.UUID;
+
+@Repository
+@RequiredArgsConstructor
+public class UserRepositoryImpl implements UserRepository {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    private static final String INSERT_USER = """
+        INSERT INTO users (id, email, password_hash, first_name, last_name, 
+                          email_verified, provider, provider_id, email_verification_token,
+                          email_verification_token_expiry, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?::auth_provider, ?, ?, ?, ?, ?)
+        """;
+
+    private static final String UPDATE_USER = """
+        UPDATE users SET email = ?, password_hash = ?, first_name = ?, last_name = ?,
+                        email_verified = ?, provider = ?::auth_provider, provider_id = ?,
+                        email_verification_token = ?, email_verification_token_expiry = ?,
+                        updated_at = ?
+        WHERE id = ?
+        """;
+
+    private static final String SELECT_BY_ID = """
+        SELECT * FROM users WHERE id = ?
+        """;
+
+    private static final String SELECT_BY_EMAIL = """
+        SELECT * FROM users WHERE LOWER(email) = LOWER(?)
+        """;
+
+    private static final String SELECT_BY_TOKEN = """
+        SELECT * FROM users WHERE email_verification_token = ?
+        """;
+
+    private static final String SELECT_BY_PROVIDER = """
+        SELECT * FROM users WHERE provider = ?::auth_provider AND provider_id = ?
+        """;
+
+    private static final String EXISTS_BY_EMAIL = """
+        SELECT EXISTS(SELECT 1 FROM users WHERE LOWER(email) = LOWER(?))
+        """;
+
+    private static final String DELETE_BY_ID = """
+        DELETE FROM users WHERE id = ?
+        """;
+
+    private final RowMapper<User> userRowMapper = new UserRowMapper();
+
+    @Override
+    public User save(User user) {
+        user.setId(UUID.randomUUID());
+        user.setCreatedAt(LocalDateTime.now());
+        user.setUpdatedAt(LocalDateTime.now());
+
+        jdbcTemplate.update(INSERT_USER,
+                user.getId(),
+                user.getEmail(),
+                user.getPasswordHash(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.isEmailVerified(),
+                user.getProvider().name(),
+                user.getProviderId(),
+                user.getEmailVerificationToken(),
+                user.getEmailVerificationTokenExpiry() != null ?
+                        Timestamp.valueOf(user.getEmailVerificationTokenExpiry()) : null,
+                Timestamp.valueOf(user.getCreatedAt()),
+                Timestamp.valueOf(user.getUpdatedAt())
+        );
+
+        return user;
+    }
+
+    @Override
+    public User update(User user) {
+        user.setUpdatedAt(LocalDateTime.now());
+
+        jdbcTemplate.update(UPDATE_USER,
+                user.getEmail(),
+                user.getPasswordHash(),
+                user.getFirstName(),
+                user.getLastName(),
+                user.isEmailVerified(),
+                user.getProvider().name(),
+                user.getProviderId(),
+                user.getEmailVerificationToken(),
+                user.getEmailVerificationTokenExpiry() != null ?
+                        Timestamp.valueOf(user.getEmailVerificationTokenExpiry()) : null,
+                Timestamp.valueOf(user.getUpdatedAt()),
+                user.getId()
+        );
+
+        return user;
+    }
+
+    @Override
+    public Optional<User> findById(UUID id) {
+        return jdbcTemplate.query(SELECT_BY_ID, userRowMapper, id)
+                .stream().findFirst();
+    }
+
+    @Override
+    public Optional<User> findByEmail(String email) {
+        return jdbcTemplate.query(SELECT_BY_EMAIL, userRowMapper, email)
+                .stream().findFirst();
+    }
+
+    @Override
+    public Optional<User> findByEmailVerificationToken(String token) {
+        return jdbcTemplate.query(SELECT_BY_TOKEN, userRowMapper, token)
+                .stream().findFirst();
+    }
+
+    @Override
+    public Optional<User> findByProviderAndProviderId(User.AuthProvider provider, String providerId) {
+        return jdbcTemplate.query(SELECT_BY_PROVIDER, userRowMapper, provider.name(), providerId)
+                .stream().findFirst();
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        Boolean exists = jdbcTemplate.queryForObject(EXISTS_BY_EMAIL, Boolean.class, email);
+        return exists != null && exists;
+    }
+
+    @Override
+    public void deleteById(UUID id) {
+        jdbcTemplate.update(DELETE_BY_ID, id);
+    }
+
+    private static class UserRowMapper implements RowMapper<User> {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            Timestamp tokenExpiry = rs.getTimestamp("email_verification_token_expiry");
+
+            return User.builder()
+                    .id(UUID.fromString(rs.getString("id")))
+                    .email(rs.getString("email"))
+                    .passwordHash(rs.getString("password_hash"))
+                    .firstName(rs.getString("first_name"))
+                    .lastName(rs.getString("last_name"))
+                    .emailVerified(rs.getBoolean("email_verified"))
+                    .provider(User.AuthProvider.valueOf(rs.getString("provider")))
+                    .providerId(rs.getString("provider_id"))
+                    .emailVerificationToken(rs.getString("email_verification_token"))
+                    .emailVerificationTokenExpiry(tokenExpiry != null ? tokenExpiry.toLocalDateTime() : null)
+                    .createdAt(rs.getTimestamp("created_at").toLocalDateTime())
+                    .updatedAt(rs.getTimestamp("updated_at").toLocalDateTime())
+                    .build();
+        }
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\data\src\main\java\com\securitybusinesssuite\data\repository\impl\UserRepositoryImpl.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\AuthResponse.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/dto/AuthResponse.java
+package com.securitybusinesssuite.business.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class AuthResponse {
+    private String message;
+    private UserDto user;
+    private boolean requiresEmailVerification;
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\AuthResponse.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\LoginRequest.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/dto/LoginRequest.java
+package com.securitybusinesssuite.business.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.Data;
+
+@Data
+public class LoginRequest {
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
+    private String email;
+
+    @NotBlank(message = "Password is required")
+    private String password;
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\LoginRequest.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\OAuthResult.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/dto/OAuthResult.java
+package com.securitybusinesssuite.business.dto;
+
+import com.securitybusinesssuite.data.entity.User;
+
+public class OAuthResult {
+    private final User user;
+    private final boolean isNewUser;
+
+    public OAuthResult(User user, boolean isNewUser) {
+        this.user = user;
+        this.isNewUser = isNewUser;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public boolean isNewUser() {
+        return isNewUser;
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\OAuthResult.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\RegisterRequest.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/dto/RegisterRequest.java
+package com.securitybusinesssuite.business.dto;
+
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+
+@Data
+public class RegisterRequest {
+    @Email(message = "Invalid email format")
+    @NotBlank(message = "Email is required")
+    private String email;
+
+    @NotBlank(message = "Password is required")
+    @Size(min = 8, message = "Password must be at least 8 characters")
+    private String password;
+
+    @NotBlank(message = "First name is required")
+    private String firstName;
+
+    @NotBlank(message = "Last name is required")
+    private String lastName;
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\RegisterRequest.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\TokenPair.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/dto/TokenPair.java
+package com.securitybusinesssuite.business.dto;
+
+import lombok.AllArgsConstructor;
+import lombok.Data;
+
+@Data
+@AllArgsConstructor
+public class TokenPair {
+    private String accessToken;
+    private String refreshToken;
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\TokenPair.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\UserDto.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/dto/UserDto.java
+package com.securitybusinesssuite.business.dto;
+
+import com.securitybusinesssuite.data.entity.User;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class UserDto {
+    private UUID id;
+    private String email;
+    private String firstName;
+    private String lastName;
+    private boolean emailVerified;
+    private User.AuthProvider provider;
+    private LocalDateTime createdAt;
+
+    public static UserDto fromEntity(User user) {
+        return UserDto.builder()
+                .id(user.getId())
+                .email(user.getEmail())
+                .firstName(user.getFirstName())
+                .lastName(user.getLastName())
+                .emailVerified(user.isEmailVerified())
+                .provider(user.getProvider())
+                .createdAt(user.getCreatedAt())
+                .build();
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\dto\UserDto.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\exception\AuthenticationException.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/exception/AuthenticationException.java
+package com.securitybusinesssuite.business.exception;
+
+public class AuthenticationException extends BusinessException {
+    public AuthenticationException(String message) {
+        super(message);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\exception\AuthenticationException.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\exception\BusinessException.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/exception/BusinessException.java
+package com.securitybusinesssuite.business.exception;
+
+public class BusinessException extends RuntimeException {
+    public BusinessException(String message) {
+        super(message);
+    }
+
+    public BusinessException(String message, Throwable cause) {
+        super(message, cause);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\exception\BusinessException.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\exception\UserAlreadyExistsException.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/exception/UserAlreadyExistsException.java
+package com.securitybusinesssuite.business.exception;
+
+public class UserAlreadyExistsException extends BusinessException {
+    public UserAlreadyExistsException(String message) {
+        super(message);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\exception\UserAlreadyExistsException.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\AuthService.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/AuthService.java
+package com.securitybusinesssuite.business.service;
+
+import com.securitybusinesssuite.business.dto.*;
+import com.securitybusinesssuite.data.entity.User;
+
+import java.util.Map;
+
+public interface AuthService {
+    AuthResponse register(RegisterRequest request);
+    TokenPair login(LoginRequest request);
+    String verifyEmail(String token);
+    TokenPair refresh(String refreshToken);
+    OAuthResult processOAuthLogin(String email, String provider, String providerId, Map<String, Object> attributes);
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\AuthService.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\EmailService.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/EmailService.java
+package com.securitybusinesssuite.business.service;
+
+public interface EmailService {
+    void sendVerificationEmail(String to, String firstName, String verificationToken);
+    void sendPasswordResetEmail(String to, String firstName, String resetToken);
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\EmailService.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\JwtService.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/JwtService.java
+package com.securitybusinesssuite.business.service;
+
+import com.securitybusinesssuite.business.dto.TokenPair;
+
+import java.util.UUID;
+
+public interface JwtService {
+    TokenPair generateTokenPair(UUID userId, String email);
+    String generateAccessToken(UUID userId, String email);
+    String generateRefreshToken(UUID userId);
+    boolean validateToken(String token);
+    UUID getUserIdFromToken(String token);
+    String getEmailFromToken(String token);
+    String getTokenType(String token);
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\JwtService.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\UserService.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/UserService.java
+package com.securitybusinesssuite.business.service;
+
+import com.securitybusinesssuite.business.dto.UserDto;
+import com.securitybusinesssuite.data.entity.User;
+
+import java.util.UUID;
+
+public interface UserService {
+    UserDto getUserById(UUID id);
+    User findByEmail(String email);
+    User findById(UUID id);
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\UserService.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\AuthServiceImpl.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/impl/AuthServiceImpl.java
+package com.securitybusinesssuite.business.service.impl;
+
+import com.securitybusinesssuite.business.dto.*;
+import com.securitybusinesssuite.business.exception.AuthenticationException;
+import com.securitybusinesssuite.business.exception.BusinessException;
+import com.securitybusinesssuite.business.exception.UserAlreadyExistsException;
+import com.securitybusinesssuite.business.service.AuthService;
+import com.securitybusinesssuite.business.service.EmailService;
+import com.securitybusinesssuite.business.service.JwtService;
+import com.securitybusinesssuite.data.entity.User;
+import com.securitybusinesssuite.data.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class AuthServiceImpl implements AuthService {
+
+    private final UserRepository userRepository;
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final EmailService emailService;
+
+    @Override
+    @Transactional
+    public AuthResponse register(RegisterRequest request) {
+        // Check if user exists
+        Optional<User> existingUser = userRepository.findByEmail(request.getEmail());
+
+        if (existingUser.isPresent()) {
+            User user = existingUser.get();
+
+            // If email is already verified, user is fully registered
+            if (user.isEmailVerified()) {
+                throw new UserAlreadyExistsException("Email already registered and verified");
+            }
+
+            // If email not verified, resend verification email
+            if (!user.isEmailVerified()) {
+                // Generate new verification token
+                String newVerificationToken = UUID.randomUUID().toString();
+                user.setEmailVerificationToken(newVerificationToken);
+                user.setEmailVerificationTokenExpiry(LocalDateTime.now().plusHours(24));
+                User updatedUser = userRepository.update(user);
+
+                // Resend verification email
+                emailService.sendVerificationEmail(
+                        user.getEmail(),
+                        user.getFirstName(),
+                        newVerificationToken
+                );
+
+                return AuthResponse.builder().message("Verification email resent. Please check your email.")
+                        .user(UserDto.fromEntity(updatedUser))
+                        .requiresEmailVerification(true)
+                        .build();
+            }
+        }
+
+        // Create new user
+        String verificationToken = UUID.randomUUID().toString();
+        User user = User.builder()
+                .email(request.getEmail())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .firstName(request.getFirstName())
+                .lastName(request.getLastName())
+                .emailVerified(false)
+                .provider(User.AuthProvider.LOCAL)
+                .emailVerificationToken(verificationToken)
+                .emailVerificationTokenExpiry(LocalDateTime.now().plusHours(24))
+                .build();
+
+        User savedUser = userRepository.save(user);
+
+        // Send verification email
+        emailService.sendVerificationEmail(
+                savedUser.getEmail(),
+                savedUser.getFirstName(),
+                verificationToken
+        );
+
+        return AuthResponse.builder()
+                .message("Registration successful. Please check your email to verify your account.")
+                .user(UserDto.fromEntity(savedUser))
+                .requiresEmailVerification(true)
+                .build();
+    }
+
+    @Override
+    public TokenPair login(LoginRequest request) {
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AuthenticationException("Invalid email or password"));
+
+        // Check if OAuth user trying to login with password
+        if (user.getProvider() != User.AuthProvider.LOCAL) {
+            throw new AuthenticationException("Please login with " + user.getProvider());
+        }
+
+        // Verify password
+        if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new AuthenticationException("Invalid email or password");
+        }
+
+        // Check email verification
+        if (!user.isEmailVerified()) {
+            throw new AuthenticationException("Please verify your email before logging in");
+        }
+
+        return jwtService.generateTokenPair(user.getId(), user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public String verifyEmail(String token) {
+        User user = userRepository.findByEmailVerificationToken(token)
+                .orElseThrow(() -> new BusinessException("Invalid verification token"));
+
+        if (user.getEmailVerificationTokenExpiry().isBefore(LocalDateTime.now())) {
+            throw new BusinessException("Verification token has expired");
+        }
+
+        if (user.isEmailVerified()) {
+            throw new BusinessException("Email already verified");
+        }
+
+        user.setEmailVerified(true);
+        user.setEmailVerificationToken(null);
+        user.setEmailVerificationTokenExpiry(null);
+        userRepository.update(user);
+
+        log.info("Email verified for user: {}", user.getEmail());
+        return user.getEmail();
+    }
+
+    @Override
+    public TokenPair refresh(String refreshToken) {
+        if (!jwtService.validateToken(refreshToken)) {
+            throw new AuthenticationException("Invalid refresh token");
+        }
+
+        String tokenType = jwtService.getTokenType(refreshToken);
+        if (!"refresh".equals(tokenType)) {
+            throw new AuthenticationException("Invalid token type");
+        }
+
+        UUID userId = jwtService.getUserIdFromToken(refreshToken);
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new AuthenticationException("User not found"));
+
+        return jwtService.generateTokenPair(user.getId(), user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public OAuthResult processOAuthLogin(String email, String provider, String providerId, Map<String, Object> attributes) {
+        User.AuthProvider authProvider = User.AuthProvider.valueOf(provider.toUpperCase());
+
+        // Check if OAuth user exists
+        Optional<User> existingOAuthUser = userRepository.findByProviderAndProviderId(authProvider, providerId);
+        if (existingOAuthUser.isPresent()) {
+            log.info("OAuth user found, logging in: {}", email);
+            return new OAuthResult(existingOAuthUser.get(), false); // Existing user
+        }
+
+        // Check if email exists (link accounts)
+        Optional<User> existingEmailUser = userRepository.findByEmail(email);
+        if (existingEmailUser.isPresent()) {
+            User user = existingEmailUser.get();
+
+            // Update to OAuth provider
+            user.setProvider(authProvider);
+            user.setProviderId(providerId);
+            user.setEmailVerified(true);
+
+            // Update name if not set
+            if (user.getFirstName() == null && attributes.containsKey("given_name")) {
+                user.setFirstName((String) attributes.get("given_name"));
+            }
+            if (user.getLastName() == null && attributes.containsKey("family_name")) {
+                user.setLastName((String) attributes.get("family_name"));
+            }
+
+            User updatedUser = userRepository.update(user);
+            log.info("Linked OAuth to existing account: {}", email);
+            return new OAuthResult(updatedUser, false); // Existing user (linked)
+        }
+
+        // Create new OAuth user
+        String firstName = (String) attributes.get("given_name");
+        String lastName = (String) attributes.get("family_name");
+
+        User newUser = User.builder()
+                .email(email)
+                .firstName(firstName != null ? firstName : "OAuth")
+                .lastName(lastName != null ? lastName : "User")
+                .emailVerified(true)
+                .provider(authProvider)
+                .providerId(providerId)
+                .build();
+
+        User savedUser = userRepository.save(newUser);
+        log.info("Created new OAuth user: {}", email);
+        return new OAuthResult(savedUser, true); // New user
+    }
+
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\AuthServiceImpl.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\EmailServiceImpl.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/impl/EmailServiceImpl.java
+package com.securitybusinesssuite.business.service.impl;
+
+import com.securitybusinesssuite.business.service.EmailService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+@RequiredArgsConstructor
+public class EmailServiceImpl implements EmailService {
+
+    private final JavaMailSender mailSender;
+
+    @Value("${spring.mail.from}")
+    private String fromEmail;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @Value("${app.backend.url}")
+    private String backendUrl;
+
+    @Value("${spring.profiles.active:dev}")
+    private String activeProfile;
+
+    @Override
+    public void sendVerificationEmail(String to, String firstName, String verificationToken) {
+        String verificationLink = backendUrl + "/auth/verify-email?token=" + verificationToken;
+
+        if ("dev".equals(activeProfile)) {
+            log.info("=== EMAIL VERIFICATION LINK (DEV MODE) ===");
+            log.info("To: {}", to);
+            log.info("Link: {}", verificationLink);
+            log.info("==========================================");
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(to);
+        message.setSubject("Verify your email - Security Business Suite");
+        message.setText(String.format("""
+            Hi %s,
+            
+            Welcome to Security Business Suite! Please verify your email by clicking the link below:
+            
+            %s
+            
+            This link will expire in 24 hours.
+            
+            If you didn't create an account, please ignore this email.
+            
+            Best regards,
+            Security Business Suite Team
+            """, firstName, verificationLink));
+
+        try {
+            mailSender.send(message);
+            log.info("Verification email sent to: {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send verification email to: {}", to, e);
+        }
+    }
+
+    @Override
+    public void sendPasswordResetEmail(String to, String firstName, String resetToken) {
+        String resetLink = frontendUrl + "/reset-password?token=" + resetToken;
+
+        if ("dev".equals(activeProfile)) {
+            log.info("=== PASSWORD RESET LINK (DEV MODE) ===");
+            log.info("To: {}", to);
+            log.info("Link: {}", resetLink);
+            log.info("=======================================");
+            return;
+        }
+
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(fromEmail);
+        message.setTo(to);
+        message.setSubject("Password Reset - Security Business Suite");
+        message.setText(String.format("""
+            Hi %s,
+            
+            We received a request to reset your password. Click the link below to create a new password:
+            
+            %s
+            
+            This link will expire in 1 hour.
+            
+            If you didn't request this, please ignore this email.
+            
+            Best regards,
+            Security Business Suite Team
+            """, firstName, resetLink));
+
+        try {
+            mailSender.send(message);
+            log.info("Password reset email sent to: {}", to);
+        } catch (Exception e) {
+            log.error("Failed to send password reset email to: {}", to, e);
+        }
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\EmailServiceImpl.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\JwtServiceImpl.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/impl/JwtServiceImpl.java
+package com.securitybusinesssuite.business.service.impl;
+
+import com.securitybusinesssuite.business.dto.TokenPair;
+import com.securitybusinesssuite.business.service.JwtService;
+import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import javax.crypto.SecretKey;
+import java.nio.charset.StandardCharsets;
+import java.util.Date;
+import java.util.UUID;
+
+@Slf4j
+@Service
+public class JwtServiceImpl implements JwtService {
+
+    @Value("${app.jwt.secret}")
+    private String jwtSecret;
+
+    @Value("${app.jwt.access-token-expiration:900}")
+    private int accessTokenExpiration; // 15 minutes
+
+    @Value("${app.jwt.refresh-token-expiration:604800}")
+    private int refreshTokenExpiration; // 7 days
+
+    private SecretKey getSigningKey() {
+        return Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public TokenPair generateTokenPair(UUID userId, String email) {
+        String accessToken = generateAccessToken(userId, email);
+        String refreshToken = generateRefreshToken(userId);
+        return new TokenPair(accessToken, refreshToken);
+    }
+
+    @Override
+    public String generateAccessToken(UUID userId, String email) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + accessTokenExpiration * 1000L);
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("email", email)
+                .claim("type", "access")
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    @Override
+    public String generateRefreshToken(UUID userId) {
+        Date now = new Date();
+        Date expiryDate = new Date(now.getTime() + refreshTokenExpiration * 1000L);
+
+        return Jwts.builder()
+                .subject(userId.toString())
+                .claim("type", "refresh")
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(getSigningKey())
+                .compact();
+    }
+
+    @Override
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser()
+                    .verifyWith(getSigningKey())
+                    .build()
+                    .parseSignedClaims(token);
+            return true;
+        } catch (JwtException | IllegalArgumentException e) {
+            log.error("Invalid JWT token: {}", e.getMessage());
+            return false;
+        }
+    }
+
+    @Override
+    public UUID getUserIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return UUID.fromString(claims.getSubject());
+    }
+
+    @Override
+    public String getEmailFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.get("email", String.class);
+    }
+
+    @Override
+    public String getTokenType(String token) {
+        Claims claims = Jwts.parser()
+                .verifyWith(getSigningKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+
+        return claims.get("type", String.class);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\JwtServiceImpl.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\UserServiceImpl.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/service/impl/UserServiceImpl.java
+package com.securitybusinesssuite.business.service.impl;
+
+import com.securitybusinesssuite.business.dto.UserDto;
+import com.securitybusinesssuite.business.exception.BusinessException;
+import com.securitybusinesssuite.business.service.UserService;
+import com.securitybusinesssuite.data.entity.User;
+import com.securitybusinesssuite.data.repository.UserRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.UUID;
+
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+
+    @Override
+    public UserDto getUserById(UUID id) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+        return UserDto.fromEntity(user);
+    }
+
+    @Override
+    public User findByEmail(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new BusinessException("User not found"));
+    }
+
+    @Override
+    public User findById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new BusinessException("User not found"));
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\service\impl\UserServiceImpl.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\util\CookieUtil.java =====
+// path: business/src/main/java/com/securitybusinesssuite/business/util/CookieUtil.java
+package com.securitybusinesssuite.business.util;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+
+@Component
+public class CookieUtil {
+
+    @Value("${app.jwt.access-token-expiration:900}")
+    private int accessTokenExpiration;
+
+    @Value("${app.jwt.refresh-token-expiration:604800}")
+    private int refreshTokenExpiration;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean secureCookie;
+
+    @Value("${app.cookie.domain:localhost}")
+    private String cookieDomain;
+
+    public Cookie createAccessTokenCookie(String token) {
+        return createCookie("access_token", token, accessTokenExpiration);
+    }
+
+    public Cookie createRefreshTokenCookie(String token) {
+        return createCookie("refresh_token", token, refreshTokenExpiration);
+    }
+
+    public Cookie createLogoutCookie(String name) {
+        Cookie cookie = new Cookie(name, "");
+        cookie.setMaxAge(0);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(secureCookie);
+        cookie.setPath("/");
+        return cookie;
+    }
+
+    private Cookie createCookie(String name, String value, int maxAge) {
+        Cookie cookie = new Cookie(name, value);
+        cookie.setMaxAge(maxAge);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(secureCookie);
+        cookie.setPath("/");
+        cookie.setAttribute("SameSite", "Lax");
+        return cookie;
+    }
+
+    public String extractTokenFromCookies(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() != null) {
+            return Arrays.stream(request.getCookies())
+                    .filter(cookie -> cookieName.equals(cookie.getName()))
+                    .map(Cookie::getValue)
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
+    }
+
+    public String getAccessToken(HttpServletRequest request) {
+        return extractTokenFromCookies(request, "access_token");
+    }
+
+    public String getRefreshToken(HttpServletRequest request) {
+        return extractTokenFromCookies(request, "refresh_token");
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\business\src\main\java\com\securitybusinesssuite\business\util\CookieUtil.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\SecurityBusinessSuiteApplication.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/SecurityBusinessSuiteApplication.java
+package com.securitybusinesssuite.web;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.annotation.ComponentScan;
+
+@SpringBootApplication
+@ComponentScan(basePackages = "com.securitybusinesssuite")
+public class SecurityBusinessSuiteApplication {
+    public static void main(String[] args) {
+        SpringApplication.run(SecurityBusinessSuiteApplication.class, args);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\SecurityBusinessSuiteApplication.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\config\CorsConfig.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/config/CorsConfig.java
+package com.securitybusinesssuite.web.config;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.List;
+
+@Configuration
+public class CorsConfig {
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(List.of(frontendUrl));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\config\CorsConfig.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\controller\AuthController.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/controller/AuthController.java
+package com.securitybusinesssuite.web.controller;
+
+import com.securitybusinesssuite.business.dto.*;
+import com.securitybusinesssuite.business.service.AuthService;
+import com.securitybusinesssuite.business.service.JwtService;
+import com.securitybusinesssuite.business.service.UserService;
+import com.securitybusinesssuite.business.util.CookieUtil;
+import com.securitybusinesssuite.web.security.UserPrincipal;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.*;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Map;
+import java.util.UUID;
+
+@Slf4j
+@RestController
+@RequestMapping("/auth")
+@RequiredArgsConstructor
+public class AuthController {
+
+    private final AuthService authService;
+    private final JwtService jwtService;
+    private final UserService userService;
+    private final CookieUtil cookieUtil;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    @PostMapping("/register")
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
+        AuthResponse response = authService.register(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<Map<String, Object>> login(
+            @Valid @RequestBody LoginRequest request,
+            HttpServletResponse response) {
+
+        TokenPair tokens = authService.login(request);
+
+        // Set cookies
+        response.addCookie(cookieUtil.createAccessTokenCookie(tokens.getAccessToken()));
+        response.addCookie(cookieUtil.createRefreshTokenCookie(tokens.getRefreshToken()));
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Login successful",
+                "success", true
+        ));
+    }
+
+    @GetMapping("/verify-email")
+    public void verifyEmail(
+            @RequestParam String token,
+            HttpServletResponse response) throws IOException {
+        try {
+            String email = authService.verifyEmail(token);
+            String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
+            response.sendRedirect(frontendUrl + "/auth/callback?status=success&email="+encodedEmail);
+        } catch (Exception e) {
+            log.error("Email verification failed", e);
+            response.sendRedirect(frontendUrl + "/auth/callback?status=error&message=" + e.getMessage());
+        }
+    }
+
+    @PostMapping("/verify")
+    public ResponseEntity<Map<String, Object>> verifyToken(HttpServletRequest request) {
+        try {
+            String accessToken = cookieUtil.extractTokenFromCookies(request, "access_token");
+
+            if (accessToken == null) {
+                return ResponseEntity.status(401).body(Map.of(
+                        "valid", false,
+                        "message", "No token provided"
+                ));
+            }
+
+            // Validate token and get user info
+            if (jwtService.validateToken(accessToken)) {
+                String email = jwtService.getEmailFromToken(accessToken);
+                UUID userId = jwtService.getUserIdFromToken(accessToken);
+
+                return ResponseEntity.ok(Map.of(
+                        "valid", true,
+                        "email", email,
+                        "userId", userId.toString()
+                ));
+            } else {
+                return ResponseEntity.status(401).body(Map.of(
+                        "valid", false,
+                        "message", "Invalid token"
+                ));
+            }
+
+        } catch (Exception e) {
+            log.error("Token verification failed", e);
+            return ResponseEntity.status(401).body(Map.of(
+                    "valid", false,
+                    "message", "Token verification failed"
+            ));
+        }
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<Map<String, Object>> refresh(
+            HttpServletRequest request,
+            HttpServletResponse response) {
+
+        String refreshToken = extractTokenFromCookie(request, "refresh_token");
+        if (refreshToken == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Refresh token not found"));
+        }
+
+        try {
+            TokenPair tokens = authService.refresh(refreshToken);
+
+            // Set new cookies
+            response.addCookie(cookieUtil.createAccessTokenCookie(tokens.getAccessToken()));
+            response.addCookie(cookieUtil.createRefreshTokenCookie(tokens.getRefreshToken()));
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Token refreshed successfully",
+                    "success", true
+            ));
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/logout")
+    public ResponseEntity<Map<String, Object>> logout(HttpServletResponse response) {
+        response.addCookie(cookieUtil.createLogoutCookie("access_token"));
+        response.addCookie(cookieUtil.createLogoutCookie("refresh_token"));
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Logout successful",
+                "success", true
+        ));
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserDto> getCurrentUser(@AuthenticationPrincipal UserPrincipal principal) {
+        if (principal == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        UserDto user = userService.getUserById(UUID.fromString(principal.getUserId()));
+        return ResponseEntity.ok(user);
+    }
+
+    private String extractTokenFromCookie(HttpServletRequest request, String cookieName) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> cookieName.equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\controller\AuthController.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\exception\GlobalExceptionHandler.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/exception/GlobalExceptionHandler.java
+package com.securitybusinesssuite.web.exception;
+
+import com.securitybusinesssuite.business.exception.AuthenticationException;
+import com.securitybusinesssuite.business.exception.BusinessException;
+import com.securitybusinesssuite.business.exception.UserAlreadyExistsException;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.HashMap;
+import java.util.Map;
+
+@Slf4j
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidationExceptions(
+            MethodArgumentNotValidException ex) {
+        Map<String, String> errors = new HashMap<>();
+        ex.getBindingResult().getAllErrors().forEach((error) -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
+
+        return ResponseEntity.badRequest().body(Map.of(
+                "error", "Validation failed",
+                "details", errors
+        ));
+    }
+
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<Map<String, String>> handleAuthenticationException(
+            AuthenticationException ex) {
+        log.error("Authentication error: {}", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of(
+                "error", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(UserAlreadyExistsException.class)
+    public ResponseEntity<Map<String, String>> handleUserAlreadyExistsException(
+            UserAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of(
+                "error", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    public ResponseEntity<Map<String, String>> handleBusinessException(
+            BusinessException ex) {
+        log.error("Business error: {}", ex.getMessage());
+        return ResponseEntity.badRequest().body(Map.of(
+                "error", ex.getMessage()
+        ));
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, String>> handleGenericException(
+            Exception ex) {
+        log.error("Unexpected error", ex);
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of(
+                "error", "An unexpected error occurred"
+        ));
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\exception\GlobalExceptionHandler.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\CustomOAuth2SuccessHandler.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/security/CustomOAuth2SuccessHandler.java
+package com.securitybusinesssuite.web.security;
+
+import com.securitybusinesssuite.business.dto.OAuthResult;
+import com.securitybusinesssuite.business.service.AuthService;
+import com.securitybusinesssuite.business.service.JwtService;
+import com.securitybusinesssuite.business.util.CookieUtil;
+import com.securitybusinesssuite.data.entity.User;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+
+import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+@Slf4j
+@Component
+public class CustomOAuth2SuccessHandler extends SimpleUrlAuthenticationSuccessHandler {
+
+    private final AuthService authService;
+    private final JwtService jwtService;
+    private final CookieUtil cookieUtil;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
+
+    // Add @Lazy to the constructor to break the circular dependency
+    public CustomOAuth2SuccessHandler(@Lazy AuthService authService,
+                                      JwtService jwtService,
+                                      CookieUtil cookieUtil) {
+        this.authService = authService;
+        this.jwtService = jwtService;
+        this.cookieUtil = cookieUtil;
+    }
+
+    @Override
+    public void onAuthenticationSuccess(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            Authentication authentication) throws IOException {
+
+        OAuth2User oAuth2User = (OAuth2User) authentication.getPrincipal();
+
+        String email = oAuth2User.getAttribute("email");
+        String provider = "GOOGLE";
+        String providerId = oAuth2User.getName();
+        Map<String, Object> attributes = oAuth2User.getAttributes();
+
+        try {
+            OAuthResult result = authService.processOAuthLogin(email, provider, providerId, attributes);
+            User user = result.getUser();
+
+            // Generate JWT tokens
+            var tokens = jwtService.generateTokenPair(user.getId(), user.getEmail());
+
+            // Set cookies
+            response.addCookie(cookieUtil.createAccessTokenCookie(tokens.getAccessToken()));
+            response.addCookie(cookieUtil.createRefreshTokenCookie(tokens.getRefreshToken()));
+
+            String encodedEmail = URLEncoder.encode(email, StandardCharsets.UTF_8);
+
+            // Redirect based on user status
+            if (result.isNewUser()) {
+                // First time registration - redirect to callback page
+                getRedirectStrategy().sendRedirect(request, response,
+                        frontendUrl + "/auth/callback?status=success&email=" + encodedEmail);
+            } else {
+                // Existing user login - redirect to dashboard
+                getRedirectStrategy().sendRedirect(request, response,
+                        frontendUrl + "/dashboard");
+            }
+
+        } catch (Exception e) {
+            log.error("OAuth authentication failed", e);
+            String encodedMessage = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+            getRedirectStrategy().sendRedirect(request, response,
+                    frontendUrl + "/auth/callback?status=error&message=" + encodedMessage);
+        }
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\CustomOAuth2SuccessHandler.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\CustomOAuth2UserService.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/security/CustomOAuth2UserService.java
+package com.securitybusinesssuite.web.security;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
+import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.stereotype.Service;
+
+@Slf4j
+@Service
+public class CustomOAuth2UserService extends DefaultOAuth2UserService {
+
+    @Override
+    public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
+        OAuth2User user = super.loadUser(userRequest);
+        String email = user.getAttribute("email");
+        // Log OAuth user info for debugging
+        log.info("OAuth2 user loaded: {}", email!=null?email:"unknown");
+
+        // Additional processing can be done here if needed
+        return user;
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\CustomOAuth2UserService.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\JwtAuthenticationFilter.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/security/JwtAuthenticationFilter.java
+package com.securitybusinesssuite.web.security;
+
+import com.securitybusinesssuite.business.service.JwtService;
+import com.securitybusinesssuite.business.service.UserService;
+import com.securitybusinesssuite.data.entity.User;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.UUID;
+
+@Slf4j
+@Component
+@RequiredArgsConstructor
+public class JwtAuthenticationFilter extends OncePerRequestFilter {
+
+    private final JwtService jwtService;
+    private final UserService userService;
+
+    @Override
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain) throws ServletException, IOException {
+
+        String token = extractTokenFromCookie(request);
+
+        if (token != null && jwtService.validateToken(token)) {
+            try {
+                String tokenType = jwtService.getTokenType(token);
+                if ("access".equals(tokenType)) {
+                    UUID userId = jwtService.getUserIdFromToken(token);
+                    User user = userService.findById(userId);
+
+                    UserPrincipal userPrincipal = UserPrincipal.create(user);
+                    UsernamePasswordAuthenticationToken authentication =
+                            new UsernamePasswordAuthenticationToken(userPrincipal, null, userPrincipal.getAuthorities());
+                    authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception e) {
+                log.error("Cannot set user authentication", e);
+            }
+        }
+
+        filterChain.doFilter(request, response);
+    }
+
+    private String extractTokenFromCookie(HttpServletRequest request) {
+        if (request.getCookies() == null) {
+            return null;
+        }
+
+        return Arrays.stream(request.getCookies())
+                .filter(cookie -> "access_token".equals(cookie.getName()))
+                .map(Cookie::getValue)
+                .findFirst()
+                .orElse(null);
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\JwtAuthenticationFilter.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\SecurityConfig.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/security/SecurityConfig.java
+package com.securitybusinesssuite.web.security;
+
+import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfigurationSource;
+
+@Configuration
+@EnableWebSecurity
+@RequiredArgsConstructor
+public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final CustomOAuth2SuccessHandler oAuth2SuccessHandler;
+    private final CustomOAuth2UserService customOAuth2UserService;
+    private final CorsConfigurationSource corsConfigurationSource;
+    @Bean
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        http
+                .cors(cors -> cors.configurationSource(corsConfigurationSource)) // ← Add this line
+                .csrf(csrf -> csrf.disable())
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(
+                                "/auth/register",
+                                "/auth/login",
+                                "/auth/verify-email",
+                                "/auth/refresh",
+                                "/auth/verify",
+                                "/oauth2/**"
+                        ).permitAll()
+                        .anyRequest().authenticated()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo
+                                .userService(customOAuth2UserService)
+                        )
+                        .successHandler(oAuth2SuccessHandler)
+                )
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\SecurityConfig.java =====
+
+===== BEGIN FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\UserPrincipal.java =====
+// path: web/src/main/java/com/securitybusinesssuite/web/security/UserPrincipal.java
+package com.securitybusinesssuite.web.security;
+
+import com.securitybusinesssuite.data.entity.User;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.Collections;
+
+@Data
+@AllArgsConstructor
+public class UserPrincipal implements UserDetails {
+
+    private String userId;
+    private String email;
+    private String password;
+    private Collection<? extends GrantedAuthority> authorities;
+
+    public static UserPrincipal create(User user) {
+        return new UserPrincipal(
+                user.getId().toString(),
+                user.getEmail(),
+                user.getPasswordHash(),
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+        );
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}
+
+===== END FILE: c:\Users\alexr\IdeaProjects\securitybusinesssuite\web\src\main\java\com\securitybusinesssuite\web\security\UserPrincipal.java =====

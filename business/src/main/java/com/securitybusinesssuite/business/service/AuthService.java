@@ -11,5 +11,5 @@ public interface AuthService {
     TokenPair login(LoginRequest request);
     String verifyEmail(String token);
     TokenPair refresh(String refreshToken);
-    User processOAuthLogin(String email, String provider, String providerId, Map<String, Object> attributes);
+    OAuthResult processOAuthLogin(String email, String provider, String providerId, Map<String, Object> attributes);
 }
